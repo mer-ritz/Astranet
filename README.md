@@ -34,9 +34,10 @@ Backend: Python, FastAPI, WebSockets, NumPy, SciPy, NetworkX, SGP4 and Basilisk 
 ## Team — Ctrl Freaks
 
 - Vaibhavi — Mission Control UI, visualization and integration
-- Hari — Simulation and digital-twin backend
-- Zahid — Autonomy, resilience and recovery engine
+- Hari — Simulation and digital-twin backend & Autonomy, resilience and recovery engine.
 - Rits — Scenario integration, validation and QA
+- Vinay - recovery engine and test case
+- Printha - documentation and research.
 
 ## Branches
 
