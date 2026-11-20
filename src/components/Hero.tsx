@@ -8,8 +8,8 @@ interface HeroProps {
 }
 
 const ROLES = ["Detect", "Coordinate", "Reconfigure", "Recover"];
-const HLS_URL =
-  "https://stream.mux.com/Aa02T7oM1wH5Mk5EEVDYhbZ1ChcdhRsS2m1NYyx4Ua1g.m3u8";
+const LOCAL_VIDEO_URL = "/videos/earth-orbit.mp4";
+const POSTER_IMAGE = "/images/brand_identity_1791897232807.jpg";
 
 export default function Hero({ onSeeWorks, onReachOut }: HeroProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,32 +24,37 @@ export default function Hero({ onSeeWorks, onReachOut }: HeroProps) {
     return () => clearInterval(roleInterval);
   }, []);
 
-  // HLS Video Initialization
+  // Video Initialization with reliable local fallback
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    const customHlsUrl = (import.meta as any).env?.VITE_HERO_HLS_URL;
     let hls: Hls | null = null;
 
-    if (Hls.isSupported()) {
+    if (customHlsUrl && Hls.isSupported()) {
       hls = new Hls({
         autoStartLoad: true,
         startLevel: -1,
         capLevelToPlayerSize: true,
       });
-      hls.loadSource(HLS_URL);
+      hls.loadSource(customHlsUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {
-          // Autoplay policy fallback
-        });
+        video.play().catch(() => {});
       });
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // Native Safari / iOS HLS support
-      video.src = HLS_URL;
+      hls.on(Hls.Events.ERROR, () => {
+        video.src = LOCAL_VIDEO_URL;
+        video.play().catch(() => {});
+      });
+    } else if (customHlsUrl && video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = customHlsUrl;
       video.addEventListener("loadedmetadata", () => {
         video.play().catch(() => {});
       });
+    } else {
+      video.src = LOCAL_VIDEO_URL;
+      video.play().catch(() => {});
     }
 
     return () => {
@@ -101,10 +106,13 @@ export default function Hero({ onSeeWorks, onReachOut }: HeroProps) {
           muted
           loop
           playsInline
+          poster={POSTER_IMAGE}
           className="absolute top-1/2 left-1/2 min-w-full min-h-full object-cover -translate-x-1/2 -translate-y-1/2 opacity-70"
-        />
+        >
+          <source src={LOCAL_VIDEO_URL} type="video/mp4" />
+        </video>
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-bg to-transparent pointer-events-none" />
       </div>

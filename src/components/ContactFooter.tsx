@@ -3,8 +3,8 @@ import Hls from "hls.js";
 import { gsap } from "gsap";
 import { ArrowUpRight, Copy, Check, ChevronUp } from "lucide-react";
 
-const HLS_URL =
-  "https://stream.mux.com/Aa02T7oM1wH5Mk5EEVDYhbZ1ChcdhRsS2m1NYyx4Ua1g.m3u8";
+const LOCAL_VIDEO_URL = "/videos/earth-orbit.mp4";
+const POSTER_IMAGE = "/images/brand_identity_1791897232807.jpg";
 
 const SOCIAL_LINKS = [
   { name: "SYSTEM", url: "#work" },
@@ -25,29 +25,37 @@ export default function ContactFooter({ onScrollToTop }: ContactFooterProps) {
   const marqueeRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // HLS Video Initialization for footer (flipped vertically)
+  // Video Initialization for footer (flipped vertically)
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    const customHlsUrl = (import.meta as any).env?.VITE_HERO_HLS_URL;
     let hls: Hls | null = null;
 
-    if (Hls.isSupported()) {
+    if (customHlsUrl && Hls.isSupported()) {
       hls = new Hls({
         autoStartLoad: true,
         startLevel: -1,
         capLevelToPlayerSize: true,
       });
-      hls.loadSource(HLS_URL);
+      hls.loadSource(customHlsUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(() => {});
       });
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = HLS_URL;
+      hls.on(Hls.Events.ERROR, () => {
+        video.src = LOCAL_VIDEO_URL;
+        video.play().catch(() => {});
+      });
+    } else if (customHlsUrl && video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = customHlsUrl;
       video.addEventListener("loadedmetadata", () => {
         video.play().catch(() => {});
       });
+    } else {
+      video.src = LOCAL_VIDEO_URL;
+      video.play().catch(() => {});
     }
 
     return () => {
@@ -64,9 +72,9 @@ export default function ContactFooter({ onScrollToTop }: ContactFooterProps) {
 
     const anim = gsap.to(marquee, {
       xPercent: -50,
-      duration: 40,
-      ease: "none",
       repeat: -1,
+      duration: 35,
+      ease: "none",
     });
 
     return () => {
@@ -74,8 +82,7 @@ export default function ContactFooter({ onScrollToTop }: ContactFooterProps) {
     };
   }, []);
 
-  const handleCopyEmail = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleCopyEmail = () => {
     navigator.clipboard.writeText("contact@astranet.space");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -84,7 +91,7 @@ export default function ContactFooter({ onScrollToTop }: ContactFooterProps) {
   return (
     <footer
       id="contact"
-      className="relative bg-bg pt-16 md:pt-20 pb-8 md:pb-12 overflow-hidden border-t border-stroke/40"
+      className="relative bg-bg pt-20 pb-12 overflow-hidden border-t border-stroke"
     >
       {/* Background Video flipped vertically (scale-y-[-1]) with heavier overlay */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -94,8 +101,11 @@ export default function ContactFooter({ onScrollToTop }: ContactFooterProps) {
           muted
           loop
           playsInline
+          poster={POSTER_IMAGE}
           className="absolute top-1/2 left-1/2 min-w-full min-h-full object-cover -translate-x-1/2 -translate-y-1/2 scale-y-[-1] opacity-50"
-        />
+        >
+          <source src={LOCAL_VIDEO_URL} type="video/mp4" />
+        </video>
         {/* Heavier overlay: bg-black/60 */}
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-bg to-transparent" />
@@ -128,45 +138,58 @@ export default function ContactFooter({ onScrollToTop }: ContactFooterProps) {
 
           {/* Email Button with gradient hover border ring */}
           <div className="inline-flex flex-col sm:flex-row items-center gap-3">
-            <a
-              href="mailto:contact@astranet.space"
-              className="group relative inline-flex items-center gap-3 rounded-full text-base sm:text-lg font-medium px-8 py-4 cursor-pointer overflow-hidden border border-stroke bg-surface hover:border-transparent transition-all duration-300"
+            <button
+              onClick={handleCopyEmail}
+              className="group relative rounded-full text-sm font-medium px-7 py-3.5 transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden border-2 border-stroke bg-bg text-text-primary group-hover:border-transparent inline-flex items-center gap-2"
             >
-              {/* Gradient border ring on hover */}
               <span
                 className="absolute -inset-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 accent-gradient -z-10"
                 aria-hidden="true"
               />
-              <span className="relative z-10 flex items-center gap-3 text-text-primary">
-                <span>ENTER MISSION CONTROL</span>
-                <ArrowUpRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              <span className="relative z-10 font-mono text-xs sm:text-sm">
+                contact@astranet.space
+              </span>
+              <span className="relative z-10 text-muted group-hover:text-white transition-colors">
+                {copied ? (
+                  <Check className="w-4 h-4 text-emerald-400" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </span>
+            </button>
+
+            {/* Launch Console CTA */}
+            <a
+              href="#mission-control"
+              className="group relative rounded-full text-sm font-medium px-7 py-3.5 transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden inline-flex items-center gap-2"
+            >
+              <span
+                className="absolute -inset-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 accent-gradient -z-10"
+                aria-hidden="true"
+              />
+              <span className="relative z-10 block transition-colors duration-300 bg-text-primary text-bg group-hover:bg-bg group-hover:text-text-primary px-7 py-3.5 -m-7 -my-3.5 rounded-full inline-flex items-center gap-2">
+                Launch Console
+                <ArrowUpRight className="w-4 h-4" />
               </span>
             </a>
-
-            {/* Quick copy email tool */}
-            <button
-              onClick={handleCopyEmail}
-              className="p-3.5 rounded-full border border-stroke bg-surface text-muted hover:text-white hover:border-white/20 transition-all duration-300 cursor-pointer"
-              title="Copy contact to clipboard"
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-emerald-400" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </button>
           </div>
+
+          {copied && (
+            <div className="mt-3 text-xs text-emerald-400 font-mono tracking-wider animate-pulse">
+              Email copied to clipboard
+            </div>
+          )}
         </div>
 
-        {/* Footer Bar */}
-        <div className="w-full mt-16 md:mt-24 pt-8 border-t border-stroke/60 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted">
-          {/* Green pulsing dot + "SYSTEM STATUS • ONLINE" */}
-          <div className="flex items-center gap-2.5 order-2 md:order-1">
-            <span className="relative flex h-2.5 w-2.5">
+        {/* Bottom Bar */}
+        <div className="w-full pt-16 mt-8 border-t border-stroke/50 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted">
+          {/* Status Indicator */}
+          <div className="flex items-center gap-2 order-2 md:order-1 font-mono text-[11px]">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="font-medium text-text-primary tracking-wide">
+            <span className="tracking-widest uppercase">
               SYSTEM STATUS • ONLINE
             </span>
           </div>
