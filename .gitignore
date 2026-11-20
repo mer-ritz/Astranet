@@ -2,6 +2,7 @@ node_modules/
 build/
 dist/
 coverage/
+.vercel
 .DS_Store
 *.log
 .env*
@@ -11,4 +12,3 @@ coverage/
 __pycache__/
 *.py[cod]
 *$py.class
-
